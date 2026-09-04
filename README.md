@@ -1,11 +1,13 @@
 # bounceless-devtools
 
-Private bootstrap shell for public-candidate developer tools.
+Private monorepo for public-candidate developer tools.
 
 This repository is **PRIVATE**. Creation of the shell is not authorization to publish.
 
-Later lots may add a shared HTTP client, MCP, CLI, public types/envelopes, and synthetic fixtures.
-No product/server code belongs here.
+The workspace contains a shared API-key HTTP client, `@bounceless/mcp@1.0.0`,
+and `@bounceless/cli@1.0.0`. Both clients default to
+`https://api.bounceless.io`, read only `BOUNCELESS_API_KEY`, and never persist
+credentials. No product/server code belongs here.
 
 - License: Apache-2.0
 - Default branch: `main`
