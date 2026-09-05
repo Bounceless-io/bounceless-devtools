@@ -29,6 +29,8 @@ for (const tarball of tarballs) {
   const full = resolve('packs', tarball);
   const manifest = JSON.parse(run(['npm', 'pack', '--dry-run', '--json', full], root).stdout)[0];
   if (!manifest.files.some(file => file.path === 'LICENSE')) throw new Error(`${tarball} omits LICENSE`);
+  const notices = manifest.files.find(file => file.path === 'dist/THIRD-PARTY-NOTICES.txt');
+  if (!notices || notices.size < 100) throw new Error(`${tarball} omits substantive third-party notices`);
   const sha256 = createHash('sha256').update(await readFile(full)).digest('hex');
   console.log(`${tarball} sha256=${sha256}`);
   console.log(manifest.files.map(file => file.path).sort().join('\n'));
@@ -85,6 +87,7 @@ console.log(`mcp initialize/tools/list/call: ${names.join(',')} passed`);
 const negative = join(sandbox, 'negative');
 await mkdir(negative);
 run(['npm', 'init', '-y'], negative);
-const failed = spawnSync('npm', ['install', '--offline', '--cache', join(sandbox, 'empty-cache'), '@bounceless/client@1.0.0'], { cwd: negative, encoding: 'utf8' });
+const failed = spawnSync('npm', ['install', '--ignore-scripts', '@bounceless/client@1.0.0'], { cwd: negative, encoding: 'utf8' });
 if (failed.status === 0) throw new Error('negative omitted-client install unexpectedly succeeded');
+if (!`${failed.stdout}\n${failed.stderr}`.includes('E404')) throw new Error('negative omitted-client install did not fail with registry E404');
 console.log('negative omitted @bounceless/client@1.0.0: failed as expected');

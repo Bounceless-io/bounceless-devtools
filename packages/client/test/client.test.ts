@@ -29,11 +29,13 @@ describe('client', () => {
     const client = new BouncelessClient({ apiKey: 'synthetic-key', fetchImpl: async input => {
       urls.push(input);
       const count = urls.length === 1 ? 200 : 1;
-      return new Response(JSON.stringify({ results: Array.from({ length: count }, (_, index) => ({ index: (urls.length - 1) * 200 + index })), partial: urls.length === 1, finalized: urls.length === 2 }));
+      return new Response(JSON.stringify({ jobId: 'request-201', results: Array.from({ length: count }, (_, index) => ({ index: (urls.length - 1) * 200 + index })), limit: count, offset: (urls.length - 1) * 200, partial: urls.length === 1, finalized: urls.length === 2, requestId: `page-${urls.length}` }));
     } });
     const response = await client.getResults('request-201');
     expect((response.results as unknown[])).toHaveLength(201);
     expect(urls[1]).toContain('offset=200');
+    expect(response).toMatchObject({ limit: 1, offset: 200, partial: false, finalized: true, requestId: 'page-2' });
+    expect(response).not.toHaveProperty('nextCursor');
   });
   it('bounds 429 Retry-After delays and retry attempts', async () => {
     const delays: number[] = []; let attempts = 0;
@@ -44,5 +46,14 @@ describe('client', () => {
     expect(await client.getJob('request-1')).toEqual({ ok: true });
     expect(attempts).toBe(3);
     expect(delays).toEqual([25, 25]);
+  });
+  it('uses exponential backoff when Retry-After is absent', async () => {
+    const delays: number[] = []; let attempts = 0;
+    const client = new BouncelessClient({ apiKey: 'synthetic-key', maxRetries: 2, sleepImpl: async delay => { delays.push(delay); }, fetchImpl: async () => {
+      attempts += 1;
+      return attempts < 3 ? new Response('{}', { status: 503 }) : new Response('{"ok":true}');
+    } });
+    expect(await client.getJob('request-1')).toEqual({ ok: true });
+    expect(delays).toEqual([100, 200]);
   });
 });

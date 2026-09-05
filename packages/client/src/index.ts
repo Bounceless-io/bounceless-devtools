@@ -59,7 +59,7 @@ export class BouncelessClient {
     if (pageCount >= this.#maxPages && (cursor || (Array.isArray(page.results) && page.results.length === pageSize))) {
       throw new BouncelessApiError(0, 'pagination_limit', `Result pagination exceeded ${this.#maxPages} pages`, null);
     }
-    return { ...first, results, limit: results.length, nextCursor: cursor };
+    return { ...first, ...page, results };
   }
   async #request(method: string, path: string, body?: JsonObject, query?: Record<string, string>): Promise<JsonObject> {
     const headers: Record<string,string> = { 'X-Api-Key': this.#apiKey, Accept: 'application/json' };
@@ -79,7 +79,8 @@ export class BouncelessClient {
       const error = typeof data.error === 'object' && data.error ? data.error as JsonObject : {};
       const retryable = response.status === 429 || response.status >= 500;
       if (retryable && attempt < this.#maxRetries) {
-        const seconds = Number(response.headers.get('retry-after'));
+        const retryAfter = response.headers.get('retry-after');
+        const seconds = retryAfter === null ? Number.NaN : Number(retryAfter);
         const delay = Number.isFinite(seconds) && seconds >= 0 ? seconds * 1_000 : 100 * 2 ** attempt;
         await this.#sleep(Math.min(delay, this.#maxRetryDelayMs));
         continue;
