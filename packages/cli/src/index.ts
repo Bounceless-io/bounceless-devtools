@@ -11,7 +11,7 @@ const csvResults = (data: JsonObject): string => {
   return [keys.join(','), ...rows.map(row => keys.map(k => quote(row[k])).join(','))].join('\n');
 };
 export function createProgram(client: BouncelessClient, io: Io = defaultIo): Command {
-  const program = new Command().name('bounceless').exitOverride().configureOutput({ writeOut: s => io.stdout(s.trimEnd()), writeErr: s => io.stderr(s.trimEnd()) });
+  const program = new Command().name('bounceless').description('Bounceless email verification CLI').version('1.0.0').exitOverride().configureOutput({ writeOut: s => io.stdout(s.trimEnd()), writeErr: s => io.stderr(s.trimEnd()) });
   program.command('verify <email>').action(async email => io.stdout(JSON.stringify(await client.verifyEmail(email))));
   const batch = program.command('batch');
   batch.command('submit <file>').action(async file => io.stdout(JSON.stringify(await client.verifyBatch(csvEmails(await readFile(file, 'utf8'))))));
@@ -24,8 +24,12 @@ export function createProgram(client: BouncelessClient, io: Io = defaultIo): Com
   return program;
 }
 export async function run(argv: string[], env = process.env, io: Io = defaultIo): Promise<number> {
-  try { await createProgram(new BouncelessClient({ apiKey: env.BOUNCELESS_API_KEY ?? '' }), io).parseAsync(argv, { from: 'user' }); return 0; }
+  try {
+    const informational = argv.some(value => ['-h', '--help', '-V', '--version'].includes(value));
+    await createProgram(new BouncelessClient({ apiKey: informational ? 'help-only' : env.BOUNCELESS_API_KEY ?? '', baseUrl: env.BOUNCELESS_BASE_URL }), io).parseAsync(argv, { from: 'user' }); return 0;
+  }
   catch (cause) {
+    if (cause instanceof CommanderError && cause.exitCode === 0) return 0;
     if (cause instanceof CommanderError || (cause instanceof Error && cause.message.includes('BOUNCELESS_API_KEY'))) { io.stderr(cause.message); return 2; }
     if (cause instanceof BouncelessApiError) { io.stderr(JSON.stringify({ error: { code: cause.code, message: cause.message, requestId: cause.requestId } })); return cause.status === 401 || cause.status === 402 || cause.status === 403 || cause.status === 429 ? 3 : cause.retryable ? 4 : 5; }
     io.stderr(cause instanceof Error ? cause.message : String(cause)); return 5;

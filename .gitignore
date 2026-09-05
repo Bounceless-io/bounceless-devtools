@@ -19,6 +19,7 @@ build/
 coverage/
 .npmrc
 *.tgz
+packs/
 *.tsbuildinfo
 
 # OS / editor

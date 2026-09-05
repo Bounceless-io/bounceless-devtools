@@ -1,3 +1,3 @@
 #!/usr/bin/env node
 import { run } from './index.js';
-process.exitCode = await run(process.argv.slice(2));
+void run(process.argv.slice(2)).then(code => { process.exitCode = code; });
