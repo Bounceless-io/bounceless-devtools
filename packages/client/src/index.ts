@@ -36,7 +36,8 @@ export class BouncelessClient {
     const path = `/v1/requests/${encodeURIComponent(id)}/results`;
     const pageSize = 200;
     const first = await this.#request('GET', path, undefined, { limit: String(pageSize) });
-    const results = Array.isArray(first.results) ? [...first.results] : [];
+    this.#validateResultsPage(first);
+    const results = [...first.results as unknown[]];
     let cursor = typeof first.nextCursor === 'string' ? first.nextCursor : null;
     let offset = results.length;
     let pageCount = 1;
@@ -45,14 +46,17 @@ export class BouncelessClient {
     while (pageCount < this.#maxPages) {
       const hasCursorContract = Object.hasOwn(page, 'nextCursor');
       if (hasCursorContract && !cursor) break;
-      if (cursor && seen.has(cursor)) break;
+      if (cursor && seen.has(cursor)) {
+        throw new BouncelessApiError(0, 'pagination_loop', 'Result pagination repeated a cursor', null);
+      }
       const previousCount = Array.isArray(page.results) ? page.results.length : 0;
       if (!hasCursorContract && previousCount < pageSize) break;
       const query: Record<string, string> = cursor ? { limit: String(pageSize), cursor } : { limit: String(pageSize), offset: String(offset) };
       if (cursor) seen.add(cursor);
       page = await this.#request('GET', path, undefined, query);
-      if (Array.isArray(page.results)) results.push(...page.results);
-      offset += Array.isArray(page.results) ? page.results.length : 0;
+      this.#validateResultsPage(page);
+      results.push(...page.results as unknown[]);
+      offset += (page.results as unknown[]).length;
       cursor = typeof page.nextCursor === 'string' ? page.nextCursor : null;
       pageCount += 1;
     }
@@ -60,6 +64,14 @@ export class BouncelessClient {
       throw new BouncelessApiError(0, 'pagination_limit', `Result pagination exceeded ${this.#maxPages} pages`, null);
     }
     return { ...first, ...page, results };
+  }
+  #validateResultsPage(page: JsonObject): void {
+    if (!Array.isArray(page.results)) {
+      throw new BouncelessApiError(0, 'invalid_response', 'Results response must contain a results array', null);
+    }
+    if (Object.hasOwn(page, 'nextCursor') && page.nextCursor !== null && typeof page.nextCursor !== 'string') {
+      throw new BouncelessApiError(0, 'invalid_response', 'Results response nextCursor must be a string or null', null);
+    }
   }
   async #request(method: string, path: string, body?: JsonObject, query?: Record<string, string>): Promise<JsonObject> {
     const headers: Record<string,string> = { 'X-Api-Key': this.#apiKey, Accept: 'application/json' };
@@ -74,7 +86,13 @@ export class BouncelessClient {
         throw new BouncelessApiError(0, 'network_error', cause instanceof Error ? cause.message : String(cause), null);
       }
       const text = await response.text(); let data: JsonObject = {};
-      try { data = text ? JSON.parse(text) as JsonObject : {}; } catch { data = {}; }
+      try {
+        const parsed: unknown = text ? JSON.parse(text) : {};
+        if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) throw new Error('not an object');
+        data = parsed as JsonObject;
+      } catch {
+        if (response.ok) throw new BouncelessApiError(0, 'invalid_json', 'API returned invalid JSON', null);
+      }
       if (response.ok) return data;
       const error = typeof data.error === 'object' && data.error ? data.error as JsonObject : {};
       const retryable = response.status === 429 || response.status >= 500;

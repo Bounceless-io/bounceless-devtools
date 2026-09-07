@@ -1,13 +1,13 @@
 # Bounceless developer tools
 
-Public source for the official `@bounceless/cli@1.0.0` and `@bounceless/mcp@1.0.0` packages. Each release tarball embeds the shared HTTP client; there is no separately published client dependency.
+Public source for the official Bounceless CLI and MCP packages. The registry currently serves `@bounceless/cli@1.0.0` and `@bounceless/mcp@1.0.0`; this source prepares unpublished 1.0.1 candidates. Each release tarball embeds the shared HTTP client; there is no separately published client dependency.
 
 Requirements: Node.js 20 or newer and an API key in `BOUNCELESS_API_KEY`. Authentication uses the canonical `X-Api-Key` header. `Authorization: Bearer` remains a server compatibility path, not the client default. For local controlled testing only, `BOUNCELESS_BASE_URL` overrides `https://api.bounceless.io`.
 
 ## CLI
 
 ```sh
-npm install ./bounceless-cli-1.0.0.tgz
+npm install @bounceless/cli@1.0.0
 bounceless --help
 bounceless verify person@example.test
 bounceless batch submit emails.csv
@@ -15,14 +15,14 @@ bounceless batch status REQUEST_ID
 bounceless batch results REQUEST_ID --output json
 ```
 
-`--help` and `--version` do not require a key and write no error output. Results pagination follows canonical `cursor`/`nextCursor` responses and remains compatible with `offset` responses. Network, 429, and server retries are bounded.
+`--help` and `--version` do not require a key and write no error output. Results pagination follows canonical `cursor`/`nextCursor` responses and remains compatible with `offset` responses. Network, 429, and server retries are bounded. Invalid/truncated successful responses and repeated cursors fail explicitly instead of returning partial results as complete.
 
 `batch submit` returns the batch job identifier in `request.id`; pass that value to `batch status` and `batch results`. The top-level `requestId` is an HTTP trace identifier, not a batch job identifier. A future 1.1 release may rename that trace field to `traceId`; the 1.0 contract is unchanged.
 
 ## MCP
 
 ```sh
-npm install ./bounceless-mcp-1.0.0.tgz
+npm install @bounceless/mcp@1.0.0
 BOUNCELESS_API_KEY=blc_example bounceless-mcp
 ```
 
@@ -40,7 +40,9 @@ pnpm verify:release
 sha256sum packs/*.tgz
 ```
 
-The verification recipe inspects both inventories, installs both tarballs outside the workspace with a dedicated empty npm cache, exercises CLI and MCP against a synthetic local server, and proves that an omitted external `@bounceless/client@1.0.0` cannot resolve offline.
+The generated 1.0.1 tarballs are release candidates only and are not published by this recipe. The verification recipe inspects both inventories, installs both tarballs outside the workspace with a dedicated empty npm cache, exercises CLI and MCP against a synthetic local server, and proves that an omitted external `@bounceless/client@1.0.0` cannot resolve offline.
+
+CSV object and array fields—including `decision`, `presend`, and `reasonCodes`—are JSON-stringified inside quoted CSV cells. They never use JavaScript's `[object Object]` coercion. This corrects candidate output; the immutable registry version 1.0.0 retains its historical formatting.
 
 ## Migration from MCP 0.1.0
 

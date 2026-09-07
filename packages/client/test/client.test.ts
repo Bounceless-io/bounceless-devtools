@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BouncelessClient } from '../src/index.js';
+import { BouncelessApiError, BouncelessClient } from '../src/index.js';
 describe('client', () => {
   it('defaults to the public API and authenticates only with the API key', async () => {
     let input = ''; let init: RequestInit | undefined;
@@ -55,5 +55,22 @@ describe('client', () => {
     } });
     expect(await client.getJob('request-1')).toEqual({ ok: true });
     expect(delays).toEqual([100, 200]);
+  });
+  it.each([
+    ['truncated JSON', '{"results":['],
+    ['an unexpected results shape', '{"finalized":false,"nextCursor":"page-3"}'],
+  ])('rejects %s after a valid first page', async (_name, secondBody) => {
+    let calls = 0;
+    const client = new BouncelessClient({ apiKey: 'synthetic-key', fetchImpl: async () => new Response(++calls === 1
+      ? '{"results":[{"index":1}],"finalized":false,"nextCursor":"page-2"}'
+      : secondBody) });
+    await expect(client.getResults('request-bad')).rejects.toBeInstanceOf(BouncelessApiError);
+  });
+  it('rejects a repeated cursor instead of treating it as EOF', async () => {
+    let calls = 0;
+    const client = new BouncelessClient({ apiKey: 'synthetic-key', fetchImpl: async () => new Response(++calls === 1
+      ? '{"results":[{"index":1}],"nextCursor":"same"}'
+      : '{"results":[{"index":2}],"nextCursor":"same"}') });
+    await expect(client.getResults('request-loop')).rejects.toMatchObject({ code: 'pagination_loop' });
   });
 });
