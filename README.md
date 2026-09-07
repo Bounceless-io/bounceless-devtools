@@ -8,11 +8,11 @@ Requirements: Node.js 20 or newer and an API key in `BOUNCELESS_API_KEY`. Authen
 
 ```sh
 npm install @bounceless/cli@1.0.0
-bounceless --help
-bounceless verify person@example.test
-bounceless batch submit emails.csv
-bounceless batch status REQUEST_ID
-bounceless batch results REQUEST_ID --output json
+npx bounceless --help
+npx bounceless verify person@example.test
+npx bounceless batch submit emails.csv
+npx bounceless batch status REQUEST_ID
+npx bounceless batch results REQUEST_ID --output json
 ```
 
 `--help` and `--version` do not require a key and write no error output. Results pagination follows canonical `cursor`/`nextCursor` responses and remains compatible with `offset` responses. Network, 429, and server retries are bounded. Invalid/truncated successful responses and repeated cursors fail explicitly instead of returning partial results as complete.

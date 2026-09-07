@@ -1,5 +1,6 @@
 /* global console, setTimeout */
 import { createServer } from 'node:http';
+import { URL } from 'node:url';
 import { mkdir, mkdtemp, readFile, readdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
