@@ -17,6 +17,8 @@ bounceless batch results REQUEST_ID --output json
 
 `--help` and `--version` do not require a key and write no error output. Results pagination follows canonical `cursor`/`nextCursor` responses and remains compatible with `offset` responses. Network, 429, and server retries are bounded.
 
+`batch submit` returns the batch job identifier in `request.id`; pass that value to `batch status` and `batch results`. The top-level `requestId` is an HTTP trace identifier, not a batch job identifier. A future 1.1 release may rename that trace field to `traceId`; the 1.0 contract is unchanged.
+
 ## MCP
 
 ```sh
@@ -24,7 +26,7 @@ npm install ./bounceless-mcp-1.0.0.tgz
 BOUNCELESS_API_KEY=blc_example bounceless-mcp
 ```
 
-The GA server exposes exactly `verify_email`, `verify_batch`, `get_job`, and `get_results`. It uses stdio; keep stdout reserved for MCP messages.
+The GA server exposes exactly `verify_email`, `verify_batch`, `get_job`, and `get_results`. `verify_email` takes `email`, `verify_batch` takes `emails`, and both `get_job` and `get_results` require the snake-case argument `request_id`. Argument-name harmonization is deferred to a future 1.1 release; the 1.0 contract is unchanged. The server uses stdio; keep stdout reserved for MCP messages.
 
 ## Reproduce the two tarballs
 

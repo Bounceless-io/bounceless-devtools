@@ -7,7 +7,10 @@ const csvEmails = (input: string): string[] => input.split(/\r?\n/).map(line => 
 const csvResults = (data: JsonObject): string => {
   const rows = Array.isArray(data.results) ? data.results as JsonObject[] : [];
   const keys = [...new Set(rows.flatMap(row => Object.keys(row)))];
-  const quote = (value: unknown) => `"${String(value ?? '').replaceAll('"', '""')}"`;
+  const quote = (value: unknown) => {
+    const serialized = value !== null && typeof value === 'object' ? JSON.stringify(value) : String(value ?? '');
+    return `"${serialized.replaceAll('"', '""')}"`;
+  };
   return [keys.join(','), ...rows.map(row => keys.map(k => quote(row[k])).join(','))].join('\n');
 };
 export function createProgram(client: BouncelessClient, io: Io = defaultIo): Command {
