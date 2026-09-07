@@ -17,6 +17,8 @@ bounceless batch results REQUEST_ID --output json
 
 `--help` and `--version` do not require a key and write no error output. Results pagination follows canonical `cursor`/`nextCursor` responses and remains compatible with `offset` responses. Network, 429, and server retries are bounded.
 
+CLI guide: https://docs.bounceless.io/cli
+
 ## MCP
 
 ```sh
@@ -25,6 +27,8 @@ BOUNCELESS_API_KEY=blc_example bounceless-mcp
 ```
 
 The GA server exposes exactly `verify_email`, `verify_batch`, `get_job`, and `get_results`. It uses stdio; keep stdout reserved for MCP messages.
+
+MCP guide: https://docs.bounceless.io/guides/mcp
 
 ## Reproduce the two tarballs
 
