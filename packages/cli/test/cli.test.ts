@@ -1,9 +1,20 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { BouncelessClient } from '@bounceless/client';
-import { createProgram, csvEmails, run } from '../src/index.js';
+import { createProgram, csvEmails, csvResults, run } from '../src/index.js';
 describe('CLI', () => {
   afterEach(() => vi.unstubAllGlobals());
   it('parses a synthetic CSV', () => expect(csvEmails('email\nperson@example.test')).toEqual(['person@example.test']));
+  it('serializes nested decision and presend result fields as JSON in CSV', () => {
+    const csv = csvResults({ results: [{
+      email: 'person@example.test',
+      decision: { action: 'send', reason: 'deliverable' },
+      presend: { status: 'valid', score: 0.99 },
+    }] });
+
+    expect(csv).not.toContain('[object Object]');
+    expect(csv).toContain('"{""action"":""send"",""reason"":""deliverable""}"');
+    expect(csv).toContain('"{""status"":""valid"",""score"":0.99}"');
+  });
   it('exposes the four exact leaf commands', () => {
     const program = createProgram(new BouncelessClient({ apiKey: 'synthetic' }));
     expect(program.commands.map(c => c.name())).toEqual(['verify','batch']);
