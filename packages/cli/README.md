@@ -1,6 +1,10 @@
 # @bounceless/cli
 
-The npm registry currently serves `@bounceless/cli@1.0.0`; version 1.0.1 in this source tree is an unpublished candidate.
+Official Bounceless CLI, published on the public npm registry as `@bounceless/cli`. The unscoped `bounceless` name does not resolve outside this repository.
+
+```
+npx --yes @bounceless/cli@1.0.2 --version
+```
 
 Requires Node.js 20+. Set `BOUNCELESS_API_KEY`, then use `bounceless verify <email>`, `bounceless batch submit <file.csv>`, `bounceless batch status <request-id>`, or `bounceless batch results <request-id> [--output json|csv]`. `--help` and `--version` work without a key. No credential is stored locally.
 
