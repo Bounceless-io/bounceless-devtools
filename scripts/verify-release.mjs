@@ -44,8 +44,11 @@ for (const tarball of tarballs) {
   console.log(manifest.files.map(file => file.path).sort().join('\n'));
 }
 
-const cli = resolve('packs/bounceless-cli-1.0.1.tgz');
-const mcp = resolve('packs/bounceless-mcp-1.0.1.tgz');
+const cliName = tarballs.find(name => name.includes('cli'));
+const mcpName = tarballs.find(name => name.includes('mcp'));
+if (!cliName || !mcpName) throw new Error(`expected cli and mcp tarballs, got ${tarballs.join(',')}`);
+const cli = resolve('packs', cliName);
+const mcp = resolve('packs', mcpName);
 run(['npm', 'init', '-y']);
 run(['npm', 'install', '--cache', cache, '--ignore-scripts', cli, mcp]);
 const installed = JSON.parse(await readFile(join(sandbox, 'node_modules/@bounceless/cli/package.json'), 'utf8'));
