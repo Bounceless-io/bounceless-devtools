@@ -14,7 +14,7 @@ const csvResults = (data: JsonObject): string => {
   return [keys.join(','), ...rows.map(row => keys.map(k => quote(row[k])).join(','))].join('\n');
 };
 export function createProgram(client: BouncelessClient, io: Io = defaultIo): Command {
-  const program = new Command().name('bounceless').description('Bounceless email verification CLI').version('1.0.0').exitOverride().configureOutput({ writeOut: s => io.stdout(s.trimEnd()), writeErr: s => io.stderr(s.trimEnd()) });
+  const program = new Command().name('bounceless').description('Bounceless email verification CLI').version('1.0.1').exitOverride().configureOutput({ writeOut: s => io.stdout(s.trimEnd()), writeErr: s => io.stderr(s.trimEnd()) });
   program.command('verify <email>').action(async email => io.stdout(JSON.stringify(await client.verifyEmail(email))));
   const batch = program.command('batch');
   batch.command('submit <file>').action(async file => io.stdout(JSON.stringify(await client.verifyBatch(csvEmails(await readFile(file, 'utf8'))))));

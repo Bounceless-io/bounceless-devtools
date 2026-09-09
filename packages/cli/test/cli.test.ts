@@ -9,11 +9,13 @@ describe('CLI', () => {
       email: 'person@example.test',
       decision: { action: 'send', reason: 'deliverable' },
       presend: { status: 'valid', score: 0.99 },
+      reasonCodes: ['smtp_accept', 'domain_age'],
     }] });
 
     expect(csv).not.toContain('[object Object]');
     expect(csv).toContain('"{""action"":""send"",""reason"":""deliverable""}"');
     expect(csv).toContain('"{""status"":""valid"",""score"":0.99}"');
+    expect(csv).toContain('"[""smtp_accept"",""domain_age""]"');
   });
   it('exposes the four exact leaf commands', () => {
     const program = createProgram(new BouncelessClient({ apiKey: 'synthetic' }));
@@ -42,5 +44,12 @@ describe('CLI', () => {
   it('returns terminal code 5 for a remote non-auth 4xx', async () => {
     vi.stubGlobal('fetch', async () => new Response('{}', { status: 422 }));
     expect(await run(['verify', 'person@example.test'], { BOUNCELESS_API_KEY: 'synthetic' }, { stdout: vi.fn(), stderr: vi.fn() })).toBe(5);
+  });
+  it('returns retryable code 4 and no stdout for invalid successful JSON', async () => {
+    const io = { stdout: vi.fn(), stderr: vi.fn() };
+    vi.stubGlobal('fetch', async () => new Response('{"results":['));
+    expect(await run(['batch', 'results', 'request-1'], { BOUNCELESS_API_KEY: 'synthetic' }, io)).toBe(4);
+    expect(io.stdout).not.toHaveBeenCalled();
+    expect(io.stderr).toHaveBeenCalledWith(expect.stringContaining('invalid_json'));
   });
 });
