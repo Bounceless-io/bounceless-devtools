@@ -3,7 +3,7 @@
 Official Bounceless MCP server, published on the public npm registry as `@bounceless/mcp`. The unscoped `bounceless-mcp` name does not resolve outside this repository.
 
 ```
-npx --yes --package=@bounceless/mcp@1.0.2 node -p "require('@bounceless/mcp/package.json').version"
+npm install @bounceless/mcp@1.0.2 && node -p "require('@bounceless/mcp/package.json').version"
 ```
 
 Local stdio MCP server for the Bounceless GA single and batch API. Requires Node.js 20+. Set `BOUNCELESS_API_KEY`; the default API is `https://api.bounceless.io`. A missing key exits with a concise error and no stack trace. Start the published server with `npx --yes @bounceless/mcp@1.0.2`.
